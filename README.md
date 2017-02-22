@@ -1,4 +1,6 @@
 # Geospatial Benchmarks for MySQL
+## Table of Contents
+
 ## Overview
 This Go app provides a light framework for doing time comparisons of various
 methods for calculating distance between two points on Earth, using MySQL 
@@ -43,13 +45,13 @@ where the haversine function (hav) is as follows:
 
 Computationally, the resulting haversine function looks like:
 ```go
-function hav(theta float64) float64 { 
+func hav(theta float64) float64 { 
    math.Pow(math.Sin(theta/2), 2)
 }
 ```
 Or, using the cosine variant:
 ```go
-function hav(theta float64) float64 { 
+func hav(theta float64) float64 { 
    return .5 * (1 - math.Cos(theta))
 }
 ```
@@ -80,12 +82,14 @@ func main() {
    lon := rad(11.3750514) 
    lat := rad(47.2604910)
    tlon := rad(11.8686483)
-	tlat := rad(47.2261598)
+   tlat := rad(47.2261598)
    fmt.Printf("Distance in kilometers: %f\n", distance(lon, lat, tlon, tlat))
 }
 ```
 
-```sh
+which would produce the following:
+
+```
 Distance in kilometers: 37.455971
 ```
 ## Miles vs kilometers
