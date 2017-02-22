@@ -13,7 +13,6 @@ import (
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/pborman/uuid"
 	"gopkg.in/alecthomas/kingpin.v2"
 )
 
@@ -42,7 +41,7 @@ GRANT ALL ON *.* TO 'root'@'%' IDENTIFIED BY 'password';
 CREATE SCHEMA geo_data;
 USE geo_data;
 CREATE TABLE addr_isam (
-  id varchar(36) NOT NULL DEFAULT '',
+  id INT NOT NULL AUTO_INCREMENT,
   lon decimal(10,7) NOT NULL,
   lat decimal(10,7) NOT NULL,
   geom point NOT NULL,
@@ -64,7 +63,7 @@ CREATE TABLE addr_isam (
 ) ENGINE=MyISAM DEFAULT CHARSET='utf8mb4';
 
 CREATE TABLE addr_inno (
-  id varchar(36) NOT NULL DEFAULT '',
+  id INT NOT NULL AUTO_INCREMENT,
   lon decimal(10,7) NOT NULL,
   lat decimal(10,7) NOT NULL,
   geom point NOT NULL,
@@ -108,7 +107,7 @@ var storedFuncQuery = "SELECT id, distance_loc(lon, lat, %[2]s, %[3]s) AS distan
 var spatialFuncQuery = "SELECT id, (st_distance_sphere(geom, POINT(%[2]s, %[3]s))/1000) as distance FROM %[1]s;"
 
 // insertQuery must be formatted locally to set the table name, then rendered with Prepare
-var insertQuery = "INSERT INTO %[1]s (id, lon, lat, rlon_d, rlat_d, rlon_dd, rlat_dd, geom, number, street, unit, city, district, region, postcode) VALUES ('%[2]s', %[3]s, %[4]s, RADIANS(%[3]s), RADIANS(%[4]s), RADIANS(%[3]s), RADIANS(%[4]s),  POINT(%[3]s, %[4]s), '%[5]s', '%[6]s', '%[7]s', '%[8]s', '%[9]s', '%[10]s', '%[11]s');"
+var insertQuery = `INSERT INTO %[1]s (lon, lat, rlon_d, rlat_d, rlon_dd, rlat_dd, geom, number, street, unit, city, district, region, postcode) VALUES ( %[2]s, %[3]s, RADIANS(%[2]s), RADIANS(%[3]s), RADIANS(%[2]s), RADIANS(%[3]s),  POINT(%[2]s, %[3]s), "%[4]s", "%[5]s", "%[6]s", "%[7]s", "%[8]s", "%[9]s", "%[10]s");`
 
 // GeoCommand stores all values provided on the command command line. These
 // values are passed to the command functions listed below.
@@ -145,12 +144,12 @@ func rad(deg float64) float64 {
 }
 
 // haversin(θ) function
-func haversine(theta float64) float64 {
-	// return 0.5 * (1 - math.Cos(theta))
-	return math.Pow(math.Sin(theta/2), 2)
-}
-func haversine2(theta float64) float64 {
+func hav(theta float64) float64 {
 	return .5 * (1 - math.Cos(theta))
+}
+
+func hav2(theta float64) float64 {
+	return math.Pow(math.Sin(theta/2), 2)
 }
 
 // Calculate distance using law of cosines.
@@ -162,7 +161,7 @@ func hDist(dlon, dlat, dtlon, dtlat float64) float64 {
 	tlon := rad(dtlon)
 	tlat := rad(dtlat)
 
-	return Rm *
+	return Rk *
 		math.Acos(
 			math.Sin(lat)*math.Sin(tlat)+
 				math.Cos(lat)*math.Cos(tlat)*
@@ -176,9 +175,9 @@ func hDist2(dlon, dlat, dtlon, dtlat float64) float64 {
 	tlon := rad(dtlon)
 	tlat := rad(dtlat)
 
-	h := haversine(tlat-lat) + math.Cos(lat)*math.Cos(tlat)*haversine(tlon-lon)
+	h := hav(tlat-lat) + math.Cos(lat)*math.Cos(tlat)*hav(tlon-lon)
 
-	return 2 * Rm * math.Asin(math.Sqrt(h))
+	return 2 * Rk * math.Asin(math.Sqrt(h))
 }
 
 // Distance calculates the distance between two points
@@ -226,8 +225,6 @@ func (gc *GeoCommand) Load(ctx *kingpin.ParseContext) error {
 			break
 		}
 
-		uuid := uuid.New()
-
 		// IF a postal code was provided, it should be prepended to the
 		// postal code in the row.
 		p := ""
@@ -239,7 +236,6 @@ func (gc *GeoCommand) Load(ctx *kingpin.ParseContext) error {
 
 		// Set the table selection
 		query := fmt.Sprintf(insertQuery, gc.Table,
-			uuid,
 			row[0],
 			row[1],
 			row[2],
@@ -250,9 +246,10 @@ func (gc *GeoCommand) Load(ctx *kingpin.ParseContext) error {
 			row[7],
 			p)
 		_, err = db.Exec(query)
-		fmt.Println(row)
+
 		if err != nil {
-			log.Print(err.Error())
+			fmt.Println(row)
+			fmt.Println(query)
 			return err
 		}
 	}

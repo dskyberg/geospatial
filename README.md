@@ -132,3 +132,13 @@ multiply by `1000` to get equivilant values.
 SELECT id, (st_distance_sphere(POINT(lon, lat), POINT(tlon, tlat) )/1000) AS distance FROM my_table;
 ```
 # The Benchmarks
+
+## Setup
+### Install the app
+```sh
+> go get github.com/dskyberg/geospatial
+```
+### Download the test data
+You can use any of the collections from the [OpenAddresses download site](http://results.openaddresses.io)
+> wget https://s3.amazonaws.com/data.openaddresses.io/openaddr-collected-europe.zip
+> unzip openaddr-collected-europe.zip
