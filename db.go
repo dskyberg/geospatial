@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	"time"
 )
 
 // SterlingQuery
@@ -304,6 +305,7 @@ func GetCluster(offset, clusterSize int, rnd *rand.Rand, db *sql.DB) (int, []Clu
 
 	populationSize := GetRowCount("addr_inno", db)
 	fmt.Printf("Looking for ")
+	start := time.Now()
 	for {
 		anchor = rnd.Intn(populationSize-1) + 1
 		fmt.Printf("%d rows near %d...", clusterSize, anchor)
@@ -314,7 +316,8 @@ func GetCluster(offset, clusterSize int, rnd *rand.Rand, db *sql.DB) (int, []Clu
 			fmt.Printf("too small (%d), retrying...", len(c))
 			continue
 		}
-		fmt.Printf("found in %d rows\n", numRows)
+		queryTime := time.Since(start)
+		fmt.Printf("found in %d rows [%v]\n", numRows, Red("%vms", Round(float64(queryTime)/float64(time.Millisecond), 2)))
 		cluster = samplePop(c, clusterSize, rnd)
 		break
 	}

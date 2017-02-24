@@ -1,6 +1,7 @@
 package main
 
 import (
+	"math"
 	"math/rand"
 	"time"
 )
@@ -47,4 +48,14 @@ func CoinFlip(val int, rnd *rand.Rand) int {
 			return -Abs(val)
 		}
 	}
+}
+
+// Round provides the missing Round for math.
+func Round(a float64, places int) float64 {
+	shift := math.Pow(10, float64(places))
+	if a < 0 {
+		return math.Ceil(a*shift-0.5) / shift
+	}
+	return math.Floor(a*shift+0.5) / shift
+
 }

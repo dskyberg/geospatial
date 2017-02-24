@@ -5,7 +5,15 @@ import (
 	"fmt"
 	"math/rand"
 	"time"
+
+	"github.com/fatih/color"
 )
+
+var Green = color.New(color.FgHiGreen).SprintfFunc()
+var Yellow = color.New(color.FgHiYellow).SprintfFunc()
+var Red = color.New(color.FgHiRed).SprintfFunc()
+var Blue = color.New(color.FgHiBlue).SprintfFunc()
+var Cyan = color.New(color.FgHiCyan).SprintfFunc()
 
 // Feed type for feed table
 type Feed struct {
@@ -115,8 +123,8 @@ func CreateFeeds(dayNo int, date time.Time, rnd *rand.Rand, db *sql.DB) {
 
 	numFeeds := 150 + rnd.Intn(100)
 	feedsPerHour := numFeeds / 10
-	fmt.Printf("Creating %d feeds for %s\n", numFeeds, date)
-
+	fmt.Printf("Creating %v feeds for %v\n", Green("%d", numFeeds), Green("%s", date))
+	start := time.Now()
 	// Since it's auto_incremented, the last id used  = row count
 	lastFeedID := GetRowCount("feed", db)
 	secondPerFeed := 3600 / feedsPerHour
@@ -147,16 +155,18 @@ func CreateFeeds(dayNo int, date time.Time, rnd *rand.Rand, db *sql.DB) {
 		// Pick a random user for the feed, and get the user's location
 		numComments := rnd.Intn(MaxComments-1) + 1
 
-		userId, cluster := GetCluster(CommenterOffset, numComments, rnd, db)
-		feed.UserID = userId
+		userID, cluster := GetCluster(CommenterOffset, numComments, rnd, db)
+		feed.UserID = userID
 		lon, lat := GetLonLat(feed.UserID, false, db)
 		feed.Lng = lon
 		feed.Lat = lat
 
 		// Insert the feed
 		InsertFeed(feed, db)
-		fmt.Printf("\tDay %d - Feed %d [%d/%d]: User: %d [%f, %f] at %s\n", dayNo, feed.ID, j, numFeeds, feed.UserID, feed.Lng, feed.Lat, feed.DateCreated.UTC().Format("2006-01-02 15:04:05"))
+		fmt.Printf("\tDay %v - Feed %d [%v/%v]: User: %d [%f, %f] at %s\n", Green("%d", dayNo), feed.ID, Cyan("%d", j), Yellow("%d", numFeeds), feed.UserID, feed.Lng, feed.Lat, feed.DateCreated.UTC().Format("2006-01-02 15:04:05"))
 		// Now that the feed is created, add some comments
 		createComments(feed, cluster, rnd, db)
 	}
+	queryTime := time.Since(start)
+	fmt.Printf("Execution time: %vms", Round(float64(queryTime)/float64(time.Millisecond), 2))
 }
