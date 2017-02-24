@@ -4,7 +4,15 @@ import (
 	"math"
 	"math/rand"
 	"time"
+
+	"github.com/fatih/color"
 )
+
+var Green = color.New(color.FgHiGreen).SprintfFunc()
+var Yellow = color.New(color.FgHiYellow).SprintfFunc()
+var Red = color.New(color.FgHiRed).SprintfFunc()
+var Blue = color.New(color.FgHiBlue).SprintfFunc()
+var Cyan = color.New(color.FgHiCyan).SprintfFunc()
 
 // Abs returns the absolute value of x.
 //
